@@ -1,7 +1,6 @@
 sudo: true
 before_install:
-- openssl aes-256-cbc -K $encrypted_79a2f6093848_key -iv $encrypted_79a2f6093848_iv
-  -in assets/server.key.enc -out assets/server.key -d
+- openssl aes-256-cbc -K $encrypted_79a2f6093848_key -iv $encrypted_79a2f6093848_iv -in assets/server.key.enc -out assets/server.key -d
 - export CLIURL=https://developer.salesforce.com/media/salesforce-cli/sfdx-linux-amd64.tar.xz
 - export SFDX_AUTOUPDATE_DISABLE=false
 - export SFDX_USE_GENERIC_UNIX_KEYCHAIN=true
@@ -19,23 +18,27 @@ before_script:
 - export PACKAGEVERSION=""
 - sfdx --version
 - sfdx plugins --core
-#- sfdx force:auth:jwt:grant --clientid $CONSUMERKEY --jwtkeyfile assets/server.key
-#  --username $USERNAME --setdefaultdevhubusername --setalias HubOrg
 script:
-- sfdx force:org:create --targetdevhubusername huynhhoc@playful-panda-1ptsf6.com --setdefaultusername --definitionfile config/project-scratch-def.json --setalias ciorg --wait 10 --durationdays 1
+- sfdx force:org:create --targetdevhubusername huynhhoc@playful-panda-1ptsf6.com --setdefaultusername
+  --definitionfile config/project-scratch-def.json --setalias ciorg --wait 10 --durationdays
+  1
 - sfdx force:org:display --targetusername ciorg
 - sfdx force:source:push --targetusername ciorg
 - sfdx force:apex:test:run --targetusername ciorg --wait 10 --resultformat tap --codecoverage
   --testlevel $TESTLEVEL
 - sfdx force:org:delete --targetusername ciorg --noprompt
 - PACKAGEVERSION="$(sfdx force:package:version:create --package $PACKAGENAME --installationkeybypass
-  --wait 10 --json --targetdevhubusername huynhhoc@playful-panda-1ptsf6.com | jq '.result.SubscriberPackageVersionId' | tr -d '"')"
+  --wait 10 --json --targetdevhubusername huynhhoc@playful-panda-1ptsf6.com | jq '.result.SubscriberPackageVersionId'
+  | tr -d '"')"
 - echo "Package Version Id - "${PACKAGEVERSION}
 - echo "Waiting for 5 minutes for package replication"
 - sleep 5m
-- sfdx force:org:create --targetdevhubusername huynhhoc@playful-panda-1ptsf6.com --setdefaultusername --definitionfile config/project-scratch-def.json --setalias installorg --wait 10 --durationdays 1
+- sfdx force:org:create --targetdevhubusername huynhhoc@playful-panda-1ptsf6.com --setdefaultusername
+  --definitionfile config/project-scratch-def.json --setalias installorg --wait 10
+  --durationdays 1
 - sfdx force:org:display --targetusername installorg
-- sfdx force:package:install --package $PACKAGEVERSION --wait 10 --targetusername installorg
+- sfdx force:package:install --package $PACKAGEVERSION --wait 10 --targetusername
+  installorg
 - sfdx force:apex:test:run --targetusername installorg --wait 10 --resultformat tap
   --codecoverage --testlevel $TESTLEVEL
 - sfdx force:org:delete --targetusername installorg --noprompt
